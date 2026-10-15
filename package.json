@@ -1,0 +1,23 @@
+{
+  "name": "gate-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GATE 2027 CS Preparation Planner — single-user syllabus, Planly, PYQs, practice, progress tracking",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:web": "pnpm --filter ./apps/web dev",
+    "dev:api": "pnpm --filter ./apps/api dev",
+    "build:web": "pnpm --filter ./apps/web build",
+    "build:api": "pnpm --filter ./apps/api build",
+    "prisma:generate": "prisma generate --schema ./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema ./prisma/schema.prisma",
+    "prisma:seed": "tsx ./prisma/seed.ts",
+    "db:up": "docker compose up -d db"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ResourceType {
+  VIDEO
+  PLAYLIST
+  BOOK
+  NOTES
+  LINK
+}
+
+enum QuestionSourceType {
+  PYQ
+  BOOK
+  CUSTOM
+}
+
+enum QuestionType {
+  MCQ
+  MSQ
+  NAT
+  OTHER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TaskType {
+  LEARNING
+  PRACTICE
+  PYQ
+  REVISION
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum PlanStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RevisionStatus {
+  PENDING
+  DONE
+  OVERDUE
+}
+
+enum TopicStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// ---------- Profile (single-user) ----------
+
+model Profile {
+  id                  String          @id @default(cuid())
+  name                String          @default("Aspirant")
+  examTarget          String          @default("GATE 2027 CS")
+  startDate           DateTime
+  targetDate          DateTime
+  dailyStudyMinutes   Int             @default(240)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  topicProgress       TopicProgress[]
+  checkins            Checkin[]
+  questionAttempts    QuestionAttempt[]
+}
+
+// ---------- Syllabus hierarchy ----------
+
+model Subject {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  description  String?
+  displayOrder Int       @default(0)
+  isSample     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  chapters     Chapter[]
+
+  @@index([displayOrder])
+}
+
+model Chapter {
+  id           String    @id @default(cuid())
+  subjectId    String
+  subject      Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String
+  description  String?
+  displayOrder Int       @default(0)
+  isSample     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  topics       Topic[]
+
+  @@unique([subjectId, slug])
+  @@index([subjectId, displayOrder])
+}
+
+model Topic {
+  id            String          @id @default(cuid())
+  chapterId     String
+  chapter       Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  parentTopicId String?
+  parent        Topic?          @relation("TopicChildren", fields: [parentTopicId], references: [id], onDelete: Cascade)
+  children      Topic[]         @relation("TopicChildren")
+  name          String
+  slug          String
+  description   String?
+  priority      Priority        @default(MEDIUM)
+  displayOrder  Int             @default(0)
+  isSample      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  resources     ResourceTopic[]
+  questions     TopicQuestion[]
+  tasks         StudyTask[]
+  revisions     RevisionSchedule[]
+  progress      TopicProgress[]
+
+  @@unique([chapterId, parentTopicId, slug])
+  @@index([chapterId, displayOrder])
+  @@index([parentTopicId])
+}
+
+model TopicProgress {
+  id          String      @id @default(cuid())
+  profileId   String
+  profile     Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  topicId     String
+  topic       Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  status      TopicStatus @default(NOT_STARTED)
+  completedAt DateTime?
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([profileId, topicId])
+  @@index([topicId])
+}
+
+// ---------- Resources (many-to-many with topics) ----------
+
+model Resource {
+  id           String          @id @default(cuid())
+  title        String
+  resourceType ResourceType    @default(VIDEO)
+  url          String?
+  description  String?
+  isSample     Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  topics       ResourceTopic[]
+  tasks        StudyTask[]
+}
+
+model ResourceTopic {
+  topicId    String
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@id([topicId, resourceId])
+}
+
+// ---------- Questions (single table: PYQ + BOOK + CUSTOM) ----------
+
+model Question {
+  id             String            @id @default(cuid())
+  sourceType     QuestionSourceType
+  questionType   QuestionType      @default(MCQ)
+  // For PYQ: full stem only when license permits; otherwise store reference.
+  // For BOOK: store edition/chapter/exercise/page reference, NOT full copyrighted text.
+  content        String?
+  options        Json?
+  answer         String?
+  explanation    String?
+  difficulty     Difficulty?
+  year           Int?
+  session        String?
+  marks          Float?
+  sourceRef      String?
+  verified       Boolean           @default(false)
+  isSample       Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  topics         TopicQuestion[]
+  tasks          TaskQuestion[]
+  attempts       QuestionAttempt[]
+
+  @@index([sourceType])
+  @@index([year])
+}
+
+model TopicQuestion {
+  topicId    String
+  topic      Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([topicId, questionId])
+}
+
+// ---------- Planning ----------
+
+model StudyPlan {
+  id         String     @id @default(cuid())
+  startDate  DateTime
+  targetDate DateTime
+  status     PlanStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  tasks      StudyTask[]
+}
+
+model StudyTask {
+  id               String      @id @default(cuid())
+  studyPlanId      String
+  studyPlan        StudyPlan   @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  scheduledDate    DateTime
+  title            String
+  taskType         TaskType
+  topicId          String?
+  topic            Topic?      @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  resourceId       String?
+  resource         Resource?   @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  estimatedMinutes Int         @default(45)
+  status           TaskStatus  @default(PENDING)
+  displayOrder     Int         @default(0)
+  completedAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  questions        TaskQuestion[]
+
+  @@index([studyPlanId, scheduledDate])
+  @@index([topicId])
+}
+
+model TaskQuestion {
+  taskId     String
+  task       StudyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, questionId])
+}
+
+// ---------- Attempts / revisions / check-ins ----------
+
+model QuestionAttempt {
+  id               String   @id @default(cuid())
+  profileId        String
+  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  isCorrect        Boolean?
+  timeTakenSeconds Int?
+  notes            String?
+  attemptedAt      DateTime @default(now())
+
+  @@index([profileId, attemptedAt])
+  @@index([questionId])
+}
+
+model RevisionSchedule {
+  id             String         @id @default(cuid())
+  topicId        String
+  topic          Topic          @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  scheduledDate  DateTime
+  status         RevisionStatus @default(PENDING)
+  lastReviewedAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([scheduledDate, status])
+  @@index([topicId])
+}
+
+model Checkin {
+  id              String   @id @default(cuid())
+  profileId       String
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  date            DateTime
+  tasksCompleted  Int      @default(0)
+  minutesStudied  Int      @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@unique([profileId, date])
+  @@index([date])
+}

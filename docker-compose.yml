@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gate-tracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gatepass}
+      POSTGRES_DB: ${POSTGRES_DB:-gatetracker}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - gate-pgdata:/var/lib/postgresql/data
+
+volumes:
+  gate-pgdata:
