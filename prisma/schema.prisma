@@ -71,6 +71,7 @@ enum TopicStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+  NEEDS_REVISION
 }
 
 enum GoalPriority {
@@ -145,6 +146,8 @@ model Topic {
   name          String
   slug          String
   description   String?
+  // Personal per-topic notes, persisted and editable from the Subjects page.
+  notes         String?
   priority      Priority        @default(MEDIUM)
   displayOrder  Int             @default(0)
   isSample      Boolean         @default(false)
@@ -260,6 +263,14 @@ model StudyTask {
   topic            Topic?      @relation(fields: [topicId], references: [id], onDelete: SetNull)
   resourceId       String?
   resource         Resource?   @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  // Study brief shown in Planly when a task row is expanded.
+  subtopic         String?
+  instructions     String?
+  expectedOutcome  String?
+  practiceNotes    String?
+  pyqNotes         String?
+  // Editable, persisted per task. Never overwritten by the seed.
+  notes            String?
   estimatedMinutes Int         @default(45)
   status           TaskStatus  @default(PENDING)
   displayOrder     Int         @default(0)

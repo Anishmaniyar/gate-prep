@@ -70,16 +70,21 @@ planningRouter.post("/tasks", async (req, res) => {
 planningRouter.patch("/tasks/:id", async (req, res) => {
   const parsed = taskStatusSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const data: Record<string, unknown> = {};
+  if (parsed.data.status !== undefined) {
+    data.status = parsed.data.status;
+    data.completedAt = parsed.data.status === "COMPLETED" ? new Date() : null;
+  }
+  if (parsed.data.notes !== undefined) data.notes = parsed.data.notes;
   const task = await prisma.studyTask.update({
     where: { id: req.params.id },
-    data: {
-      status: parsed.data.status,
-      completedAt: parsed.data.status === "COMPLETED" ? new Date() : null,
-    },
+    data,
   });
   // Keep heatmap, streak, and daily check-ins in sync with task completion.
-  const owner = await prisma.profile.findFirst({ orderBy: { createdAt: "asc" } });
-  if (owner) await syncDayCheckin(owner.id, new Date(task.scheduledDate));
+  if (parsed.data.status !== undefined) {
+    const owner = await prisma.profile.findFirst({ orderBy: { createdAt: "asc" } });
+    if (owner) await syncDayCheckin(owner.id, new Date(task.scheduledDate));
+  }
   res.json({ task });
 });
 

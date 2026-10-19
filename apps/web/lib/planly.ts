@@ -18,6 +18,12 @@ export type PlannerTask = {
   subject: string | null;
   chapter: string | null;
   topic: string | null;
+  subtopic: string | null;
+  instructions: string | null;
+  expectedOutcome: string | null;
+  practiceNotes: string | null;
+  pyqNotes: string | null;
+  notes: string | null;
   description: string | null;
   resource: { title: string; url: string | null; isSample?: boolean } | null;
   questions: QuestionRef[];
@@ -340,6 +346,12 @@ function previewTask(
     subject: topic.subject,
     chapter: topic.chapter,
     topic: topic.topic,
+    subtopic: null,
+    instructions: null,
+    expectedOutcome: null,
+    practiceNotes: null,
+    pyqNotes: null,
+    notes: null,
     description: topic.description,
     resource: null,
     questions: [],
@@ -527,6 +539,12 @@ export type ApiTask = {
   estimatedMinutes: number;
   scheduledDate: string;
   displayOrder?: number;
+  subtopic?: string | null;
+  instructions?: string | null;
+  expectedOutcome?: string | null;
+  practiceNotes?: string | null;
+  pyqNotes?: string | null;
+  notes?: string | null;
   topic?: {
     name: string;
     description?: string | null;
@@ -569,6 +587,12 @@ export function mapApiTask(task: ApiTask): PlannerTask {
     subject: task.topic?.chapter?.subject?.name ?? null,
     chapter: task.topic?.chapter?.name ?? null,
     topic: task.topic?.name ?? null,
+    subtopic: task.subtopic ?? null,
+    instructions: task.instructions ?? null,
+    expectedOutcome: task.expectedOutcome ?? null,
+    practiceNotes: task.practiceNotes ?? null,
+    pyqNotes: task.pyqNotes ?? null,
+    notes: task.notes ?? null,
     description: task.topic?.description ?? null,
     resource: task.resource
       ? {
@@ -629,6 +653,7 @@ export function buildWeeksFromTasks(weeks: WeekMeta[], tasks: PlannerTask[]): Pl
 }
 
 export function expectedOutcome(task: PlannerTask) {
+  if (task.expectedOutcome) return task.expectedOutcome;
   const topic = task.topic ?? "this topic";
   switch (task.taskType) {
     case "PRACTICE":

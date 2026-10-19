@@ -34,7 +34,11 @@ export const topicSchema = z.object({
 });
 
 export const topicProgressSchema = z.object({
-  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]),
+  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "NEEDS_REVISION"]),
+});
+
+export const topicNotesSchema = z.object({
+  notes: z.string().max(20000).nullable(),
 });
 
 export const resourceSchema = z.object({
@@ -78,7 +82,8 @@ export const taskSchema = z.object({
 });
 
 export const taskStatusSchema = z.object({
-  status: z.enum(["PENDING", "COMPLETED", "SKIPPED"]),
+  status: z.enum(["PENDING", "COMPLETED", "SKIPPED"]).optional(),
+  notes: z.string().max(20000).nullable().optional(),
 });
 
 export const attemptSchema = z.object({

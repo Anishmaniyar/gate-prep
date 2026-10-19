@@ -80,41 +80,46 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-function NotesField({ taskId }: { taskId: string }) {
-  const storageKey = `axiom:planly:notes:${taskId}`;
-  const [note, setNote] = useState("");
+function NotesField({ task }: { task: PlannerTask }) {
+  const storageKey = `axiom:planly:notes:${task.id}`;
+  const [note, setNote] = useState(task.notes ?? "");
   const [saved, setSaved] = useState(true);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    try {
-      setNote(localStorage.getItem(storageKey) ?? "");
-    } catch {
-      setNote("");
-    }
+    setNote(task.notes ?? "");
     setSaved(true);
-  }, [storageKey]);
+  }, [task.id, task.notes]);
 
-  const save = () => {
-    try {
-      localStorage.setItem(storageKey, note);
-      setSaved(true);
-    } catch {
-      setSaved(false);
+  const save = async () => {
+    if (task.isPreview) {
+      try {
+        localStorage.setItem(storageKey, note);
+        setSaved(true);
+      } catch {
+        setSaved(false);
+      }
+      return;
     }
+    setBusy(true);
+    const res = await api.patch(`/tasks/${task.id}`, { notes: note });
+    setBusy(false);
+    setSaved(Boolean(res));
   };
 
   return (
     <div className="sm:col-span-2">
       <label
-        htmlFor={`notes-${taskId}`}
+        htmlFor={`notes-${task.id}`}
         className="block text-[10px] uppercase tracking-wide text-slate"
       >
         Notes / mistake log
       </label>
       <textarea
-        id={`notes-${taskId}`}
+        id={`notes-${task.id}`}
         rows={3}
         value={note}
+        disabled={busy}
         onChange={(event) => {
           setNote(event.target.value);
           setSaved(false);
@@ -124,7 +129,13 @@ function NotesField({ taskId }: { taskId: string }) {
         className="input-quiet mt-1 resize-y py-2 text-[13px]"
       />
       <p className="mt-1 text-[10px] text-slate">
-        {saved ? "Saved in this browser" : "Unsaved changes"}
+        {busy
+          ? "Saving…"
+          : saved
+            ? task.isPreview
+              ? "Saved in this browser"
+              : "Saved to your plan"
+            : "Unsaved changes"}
       </p>
     </div>
   );
@@ -133,7 +144,7 @@ function NotesField({ taskId }: { taskId: string }) {
 function TaskDetails({ task }: { task: PlannerTask }) {
   const pyqs = task.questions;
   return (
-    <div className="mb-2 ml-6 rounded-buttons border border-mist bg-ash/60 px-3 py-3">
+    <div className="mb-2 ml-6 rounded-buttons border border-mist bg-ash px-3 py-3">
       <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2">
         <div>
           <dt className="text-[10px] uppercase tracking-wide text-slate">Subject</dt>
@@ -145,15 +156,20 @@ function TaskDetails({ task }: { task: PlannerTask }) {
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-wide text-slate">Topic / subtopic</dt>
-          <dd className="text-graphite">{task.topic ?? "Not linked"}</dd>
+          <dd className="text-graphite">
+            {task.topic ?? "Not linked"}
+            {task.subtopic && <span className="block text-slate">{task.subtopic}</span>}
+          </dd>
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-wide text-slate">Outcome</dt>
           <dd className="text-graphite">{expectedOutcome(task)}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-[10px] uppercase tracking-wide text-slate">What to study</dt>
-          <dd className="text-graphite">{task.description ?? task.title}</dd>
+          <dt className="text-[10px] uppercase tracking-wide text-slate">Learning instructions</dt>
+          <dd className="whitespace-pre-line text-graphite">
+            {task.instructions ?? task.description ?? task.title}
+          </dd>
         </div>
         <div>
           <dt className="text-[10px] uppercase tracking-wide text-slate">Lecture / resource</dt>
@@ -182,9 +198,11 @@ function TaskDetails({ task }: { task: PlannerTask }) {
         <div>
           <dt className="text-[10px] uppercase tracking-wide text-slate">Practice</dt>
           <dd className="text-graphite">
-            {task.taskType === "PRACTICE"
-              ? `Solve 10â€“15 questions on ${task.topic ?? "this topic"} and record mistakes.`
-              : "No additional practice attached."}
+            {task.practiceNotes
+              ? task.practiceNotes
+              : task.taskType === "PRACTICE"
+                ? `Solve 10â€“15 questions on ${task.topic ?? "this topic"} and record mistakes.`
+                : "No additional practice attached."}
           </dd>
         </div>
         <div className="sm:col-span-2">
@@ -196,6 +214,8 @@ function TaskDetails({ task }: { task: PlannerTask }) {
                   .map((q) => q.sourceRef ?? (q.year ? `GATE ${q.year}` : "Linked question"))
                   .join(" Â· ")}
               </span>
+            ) : task.pyqNotes ? (
+              task.pyqNotes
             ) : task.taskType === "PYQ" ? (
               `Attempt relevant GATE previous-year questions on ${task.topic ?? "this topic"}.`
             ) : (
@@ -203,7 +223,7 @@ function TaskDetails({ task }: { task: PlannerTask }) {
             )}
           </dd>
         </div>
-        <NotesField taskId={task.id} />
+        <NotesField task={task} />
       </dl>
     </div>
   );
@@ -288,7 +308,7 @@ function DayRow({
       <button
         onClick={onToggleDay}
         aria-expanded={open}
-        className="flex w-full items-center gap-2.5 py-2 pl-4 pr-4 text-left transition-colors duration-200 hover:bg-fog/60"
+        className="flex w-full items-center gap-2.5 py-2 pl-4 pr-4 text-left transition-colors duration-200 hover:bg-fog"
       >
         <Chevron open={open} />
         <span className="min-w-0 flex-1">
@@ -359,7 +379,7 @@ function WeekRow({
         <button
           onClick={onToggleWeek}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-fog/60"
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-fog"
         >
           <Chevron open={open} />
           <span className="min-w-0 flex-1">
