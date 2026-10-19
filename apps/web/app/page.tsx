@@ -14,7 +14,18 @@ import { Heatmap } from "@/components/Heatmap";
 import { TodayGoals } from "@/components/TodayGoals";
 import { SubjectBars } from "@/components/SubjectBars";
 import { ProfileSettings } from "@/components/ProfileSettings";
-import { Card, SampleBadge, SectionTitle } from "@/components/ui";
+import { SectionCard, SampleBadge, Chip } from "@/components/ui";
+
+function HeroNumber({ value, caption }: { value: string; caption: string }) {
+  return (
+    <div>
+      <div className="font-display text-heading font-light tracking-[-0.02em] text-graphite">
+        {value}
+      </div>
+      <div className="mt-1 text-[13px] text-steel">{caption}</div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -31,29 +42,40 @@ export default function DashboardPage() {
   }, [load]);
 
   if (loading) {
-    return <p className="text-sm text-neutral-500">Loading workspace…</p>;
+    return (
+      <div className="space-y-4">
+        <div className="skeleton h-10 w-48 rounded-buttons" />
+        <div className="skeleton h-4 w-72 rounded-buttons" />
+        <div className="skeleton h-44 rounded-cards" />
+      </div>
+    );
   }
 
-  // Temporary clearly-identified fallback when the API is unreachable.
-  // Shapes mirror DashboardData so the same components render.
   if (!data) {
     return (
       <div>
-        <h1 className="text-xl font-medium text-neutral-100">{MOCK_PROFILE.name}</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-[13px] uppercase tracking-wide text-slate">GATE 2027 · Computer Science</p>
+        <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">
+          {MOCK_PROFILE.name}
+        </h1>
+        <p className="mt-2 text-[13px] text-steel">
           {MOCK_PROFILE.examTarget} · API offline — showing SAMPLE data.<SampleBadge />
         </p>
-        <SectionTitle>Overall progress</SectionTitle>
-        <Card>
-          <Donut percent={MOCK_PROFILE.overallPercent} completed={3} total={25} />
-        </Card>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-          <TodayGoals date={new Date().toISOString().slice(0, 10)} tasks={[]} onChanged={() => {}} />
-          <SubjectBars subjects={[]} />
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <SectionCard title="Overall progress">
+              <Donut percent={MOCK_PROFILE.overallPercent} completed={3} total={25} />
+            </SectionCard>
+          </div>
+          <div className="lg:col-span-4">
+            <SectionCard title="Today">
+              <p className="text-[15px] text-steel">Start the API to load live preparation data.</p>
+            </SectionCard>
+          </div>
         </div>
-        <p className="text-xs text-neutral-600 mt-4">
-          Start the API (<code>pnpm dev:api</code>) to load live preparation data. Subjects:{" "}
-          {MOCK_SUBJECTS.map((s) => s.name).join(", ")} · Tasks: {MOCK_TASKS.length} · Revisions: {MOCK_REVISIONS.length}
+        <p className="mt-4 text-[13px] text-slate">
+          Subjects: {MOCK_SUBJECTS.map((s) => s.name).join(", ")} · Tasks: {MOCK_TASKS.length} ·
+          Revisions: {MOCK_REVISIONS.length}
         </p>
       </div>
     );
@@ -66,52 +88,67 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* A. Personal header — name first */}
-      <h1 className="text-xl font-medium text-neutral-100">{profile.name}</h1>
-      <p className="text-sm text-neutral-400 mt-1">{profile.examTarget}</p>
-      <p className="text-sm text-neutral-500 mt-1">
-        Target {formatShort(profile.targetDate)} · {countdown} · {streak}-day streak
+      {/* Hero — editorial serif, one ember stat */}
+      <p className="text-[13px] uppercase tracking-wide text-slate">{profile.examTarget}</p>
+      <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">
+        {profile.name}
+      </h1>
+      <p className="mt-2 text-[13px] text-steel">
+        Target {formatShort(profile.targetDate)} · {countdown} ·{" "}
+        <span className="text-ember">{streak}-day streak</span>
       </p>
       <div className="mt-1">
         <ProfileSettings profile={profile} onSaved={load} />
       </div>
 
-      {/* B. Overall progress donut */}
-      <SectionTitle>Overall progress</SectionTitle>
-      <Card>
-        <Donut percent={overall.percent} completed={overall.completed} total={overall.total} />
-      </Card>
-
-      {/* C. Activity heatmap */}
-      <SectionTitle>Study activity</SectionTitle>
-      <Card>
-        <Heatmap activity={activity} startIso={profile.startDate} targetIso={profile.targetDate} />
-      </Card>
-
-      {/* D. Two-column: Today's Goals + Subject analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-8 items-start">
-        <TodayGoals date={data.date} tasks={tasks} onChanged={load} />
-        <SubjectBars subjects={subjects} />
+      {/* Hero numbers */}
+      <div className="mt-8 flex flex-wrap gap-x-12 gap-y-6">
+        <HeroNumber value={`${overall.percent}%`} caption={`Syllabus · ${overall.completed}/${overall.total} topics`} />
+        <HeroNumber value={`${remaining > 0 ? remaining : 0}`} caption="Days to target" />
+        <HeroNumber value={`${tasks.filter((t) => t.status === "COMPLETED").length}/${tasks.length}`} caption="Today's goals done" />
       </div>
 
-      {/* E. Upcoming revisions — compact */}
-      <SectionTitle>Upcoming revisions</SectionTitle>
-      {revisions.length === 0 ? (
-        <p className="text-sm text-neutral-500">No revisions scheduled.</p>
-      ) : (
-        <ul className="border border-neutral-800 rounded divide-y divide-neutral-800">
-          {revisions.map((r) => (
-            <li key={r.id} className="px-3 py-2 text-sm flex items-center justify-between gap-3">
-              <Link href={`/chapters/${r.chapterId}`} className="text-neutral-200 truncate hover:underline">
-                {r.topicName}
-              </Link>
-              <span className="text-xs text-neutral-500 whitespace-nowrap">
-                {formatShort(r.scheduledDate)} · {r.status === "OVERDUE" ? "overdue" : "pending"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-8">
+          <SectionCard title="Overall progress" actionHref="/subjects" actionLabel="Syllabus →">
+            <Donut percent={overall.percent} completed={overall.completed} total={overall.total} />
+          </SectionCard>
+          <SectionCard title="Study activity">
+            <Heatmap activity={activity} startIso={profile.startDate} targetIso={profile.targetDate} />
+          </SectionCard>
+          <SectionCard title="Upcoming revisions">
+            {revisions.length === 0 ? (
+              <p className="text-[15px] text-steel">No revisions scheduled.</p>
+            ) : (
+              <ul className="divide-y divide-mist">
+                {revisions.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                    <Link href={`/chapters/${r.chapterId}`} className="truncate text-[15px] text-graphite hover:underline">
+                      {r.topicName}
+                    </Link>
+                    <span className="whitespace-nowrap text-[13px] text-steel">
+                      {formatShort(r.scheduledDate)} · {r.status === "OVERDUE" ? "overdue" : "pending"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SectionCard>
+        </div>
+
+        <div className="space-y-6 lg:col-span-4">
+          <SectionCard title="Today's goals" actionHref="/planly" actionLabel="Planly →">
+            <TodayGoals date={data.date} tasks={tasks} onChanged={load} />
+          </SectionCard>
+          <SectionCard title="Subjects" actionHref="/subjects" actionLabel="View all →">
+            <SubjectBars subjects={subjects} />
+          </SectionCard>
+          <div className="flex flex-wrap gap-2">
+            <Chip label="GATE 2027" count="CS" />
+            <Chip label="Target" count={formatShort(profile.targetDate)} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

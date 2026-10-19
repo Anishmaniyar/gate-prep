@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { formatDay, TASK_TYPE_LABEL, type DashboardTask } from "@/lib/dashboard";
-import { Card, SampleBadge } from "@/components/ui";
+import { SampleBadge } from "@/components/ui";
 
 function taskLink(t: DashboardTask): { href: string; label: string } | null {
   if (t.resource?.url) return { href: t.resource.url, label: t.resource.title };
@@ -35,32 +35,36 @@ export function TodayGoals({
   };
 
   return (
-    <Card>
+    <div>
       <div className="flex items-baseline justify-between gap-2">
         <div>
-          <div className="text-sm font-medium text-neutral-100">Today&apos;s Goals</div>
-          <div className="text-xs text-neutral-500 mt-0.5">{formatDay(date)}</div>
+          <div className="text-[15px] font-medium text-graphite">Today&apos;s Goals</div>
+          <div className="mt-0.5 text-[13px] text-steel">{formatDay(date)}</div>
         </div>
-        <div className="text-xs text-neutral-400 whitespace-nowrap">
+        <div className="whitespace-nowrap text-[13px] text-slate">
           {done}/{tasks.length} done
         </div>
       </div>
 
       {tasks.length > 0 && (
-        <div className="mt-3 h-1.5 w-full bg-neutral-800 rounded" role="progressbar" aria-valuenow={tasks.length ? Math.round((done / tasks.length) * 100) : 0}>
+        <div className="mt-3 h-1.5 w-full rounded-full bg-fog" role="progressbar" aria-valuenow={tasks.length ? Math.round((done / tasks.length) * 100) : 0}>
           <div
-            className="h-1.5 bg-neutral-300 rounded"
+            className="h-1.5 rounded-full bg-graphite transition-all duration-200 ease-out"
             style={{ width: `${tasks.length ? (done / tasks.length) * 100 : 0}%` }}
           />
         </div>
       )}
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-neutral-500 mt-3">
-          No tasks assigned for today. Add some in <Link href="/planly" className="underline">Planly</Link>.
+        <p className="mt-3 text-[15px] text-steel">
+          No tasks assigned for today. Add some in{" "}
+          <Link href="/planly" className="underline transition-colors hover:text-ember">
+            Planly
+          </Link>
+          .
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-neutral-800">
+        <ul className="mt-3 divide-y divide-mist">
           {tasks.map((t) => {
             const link = taskLink(t);
             return (
@@ -71,23 +75,23 @@ export function TodayGoals({
                   disabled={busy === t.id}
                   onChange={(e) => toggle(t, e.target.checked)}
                   aria-label={`Mark task ${t.title} complete`}
-                  className="accent-neutral-300 mt-0.5"
+                  className="mt-1 accent-[var(--graphite)]"
                 />
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm ${t.status === "COMPLETED" ? "text-neutral-500 line-through" : "text-neutral-200"}`}>
+                <div className="min-w-0 flex-1">
+                  <div className={`text-[15px] ${t.status === "COMPLETED" ? "text-slate line-through" : "text-graphite"}`}>
                     {t.title}
                   </div>
-                  <div className="text-xs text-neutral-500 mt-0.5">
+                  <div className="mt-0.5 text-[13px] text-steel">
                     {TASK_TYPE_LABEL[t.taskType]} · {t.estimatedMinutes} min
                     {link && (
                       <>
                         {" · "}
                         {link.href.startsWith("http") ? (
-                          <a href={link.href} target="_blank" rel="noreferrer" className="underline">
+                          <a href={link.href} target="_blank" rel="noreferrer" className="underline hover:text-ember">
                             {link.label}
                           </a>
                         ) : (
-                          <Link href={link.href} className="underline">
+                          <Link href={link.href} className="underline hover:text-ember">
                             {link.label}
                           </Link>
                         )}
@@ -103,10 +107,10 @@ export function TodayGoals({
       )}
 
       {tasks.length > 0 && (
-        <div className="text-xs text-neutral-500 mt-3">
+        <div className="mt-3 text-[13px] text-steel">
           {remainingMin === 0 ? "All done for today." : `${remainingMin} min remaining today.`}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

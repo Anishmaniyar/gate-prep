@@ -8,6 +8,7 @@ import { syllabusRouter } from "./routes/syllabus.js";
 import { libraryRouter } from "./routes/library.js";
 import { planningRouter } from "./routes/planning.js";
 import { dashboardRouter } from "./routes/dashboard.js";
+import { goalPlanRouter } from "./routes/goalPlan.js";
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,7 @@ app.use("/api", syllabusRouter);
 app.use("/api", libraryRouter);
 app.use("/api", planningRouter);
 app.use("/api", dashboardRouter);
+app.use("/api", goalPlanRouter);
 
 app.use(notFound);
 app.use(errorHandler);

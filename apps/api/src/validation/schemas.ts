@@ -97,6 +97,29 @@ export const revisionStatusSchema = z.object({
   status: z.enum(["PENDING", "DONE", "OVERDUE"]),
 });
 
+export const goalTopicUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  priority: z.enum(["HIGH", "MEDIUM", "SELECTIVE"]).optional(),
+  coverage: z.enum(["CORE", "SUPPORTING", "OPTIONAL"]).optional(),
+  plannedStart: z.string().datetime().nullable().optional(),
+  plannedEnd: z.string().datetime().nullable().optional(),
+});
+
+export const goalSubjectUpdateSchema = z.object({
+  priority: z.enum(["HIGH", "MEDIUM", "SELECTIVE"]).optional(),
+  plannedCoverage: z.number().int().min(0).max(100).optional(),
+  weightageEstimate: z.number().min(0).max(100).nullable().optional(),
+  weightageSource: z.string().nullable().optional(),
+  weightageYear: z.number().int().min(1990).max(2100).nullable().optional(),
+});
+
+export const goalWeekUpdateSchema = z.object({
+  goal: z.string().nullable().optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  targetPercent: z.number().int().min(0).max(100).optional(),
+});
+
 export const checkinSchema = z.object({
   date: z.string().datetime(),
   tasksCompleted: z.number().int().optional(),

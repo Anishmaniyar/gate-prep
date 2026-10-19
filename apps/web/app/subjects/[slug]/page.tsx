@@ -1,31 +1,42 @@
 import Link from "next/link";
-import { ProgressBar, SampleBadge, SectionTitle } from "@/components/ui";
+import { ProgressBar, SampleBadge, SectionCard, Chip } from "@/components/ui";
 import { TopicTree } from "@/components/TopicTree";
 import { MOCK_TOPICS } from "@/lib/mock";
 
 export default function SubjectDetailPage({ params }: { params: { slug: string } }) {
   return (
     <div>
-      <Link href="/subjects" className="text-xs text-neutral-500">← Subjects</Link>
-      <h1 className="text-lg font-medium text-neutral-100 mt-2">Subject: {params.slug}<SampleBadge /></h1>
-      <p className="text-sm text-neutral-500 mt-1">Completion is computed from topic checkboxes (mocked until API wired in Phase 3).</p>
-
-      <SectionTitle>Progress</SectionTitle>
-      <div className="flex items-center gap-3">
-        <div className="flex-1"><ProgressBar value={25} /></div>
-        <span className="text-sm text-neutral-400">25%</span>
+      <Link href="/subjects" className="text-[13px] text-steel transition-colors hover:text-ember">← Subjects</Link>
+      <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">
+        {params.slug}<SampleBadge />
+      </h1>
+      <p className="mt-2 text-[13px] text-steel">Completion is computed from topic checkboxes (mocked until API wired in Phase 3).</p>
+      <div className="mt-4 flex gap-2">
+        <Chip label="Weight" count="High" />
+        <Chip label="Progress" count="25%" />
       </div>
 
-      <SectionTitle>Chapters</SectionTitle>
-      <ul className="border border-neutral-800 rounded divide-y divide-neutral-800">
-        <li className="px-3 py-2 flex justify-between text-sm">
-          <Link href="/chapters/sample-logic" className="text-neutral-200">SAMPLE Logic<SampleBadge /></Link>
-          <span className="text-neutral-500">50%</span>
-        </li>
-      </ul>
+      <div className="mt-8 space-y-6">
+        <SectionCard title="Progress">
+          <div className="flex items-center gap-3">
+            <div className="flex-1"><ProgressBar value={25} /></div>
+            <span className="font-display text-subheading font-light tracking-[-0.02em] text-graphite">25%</span>
+          </div>
+        </SectionCard>
 
-      <SectionTitle>Important topics</SectionTitle>
-      <TopicTree topics={MOCK_TOPICS} />
+        <SectionCard title="Chapters">
+          <ul className="divide-y divide-mist">
+            <li className="flex items-center justify-between py-3">
+              <Link href="/chapters/sample-logic" className="text-[15px] text-graphite hover:underline">SAMPLE Logic<SampleBadge /></Link>
+              <span className="text-[13px] text-steel">50%</span>
+            </li>
+          </ul>
+        </SectionCard>
+
+        <SectionCard title="Important topics">
+          <TopicTree topics={MOCK_TOPICS} />
+        </SectionCard>
+      </div>
     </div>
   );
 }

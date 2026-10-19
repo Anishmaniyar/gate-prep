@@ -13,19 +13,22 @@ export default async function SubjectsPage() {
 
   return (
     <div>
-      <h1 className="text-lg font-medium text-neutral-100">Subjects</h1>
-      <p className="text-sm text-neutral-500 mt-1">Official GATE 2027 CS syllabus lands in Phase 4. Current rows are samples.</p>
-      <ul className="mt-4 border border-neutral-800 rounded divide-y divide-neutral-800">
+      <p className="text-[13px] uppercase tracking-wide text-slate">Syllabus</p>
+      <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">Subjects</h1>
+      <p className="mt-2 text-[13px] text-steel">Official GATE 2027 CS syllabus lands in Phase 4. Current rows are samples.</p>
+      <ul className="mt-8 divide-y divide-mist rounded-cards border border-mist bg-canvas">
         {subjects.map((s) => (
-          <li key={s.slug} className="px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <Link href={`/subjects/${s.slug}`} className="text-sm text-neutral-100">
-                {s.name}
-                <SampleBadge />
-              </Link>
-              <span className="text-xs text-neutral-500">{s.topicCompleted}/{s.topicTotal} · {s.progress}%</span>
-            </div>
-            <div className="mt-2"><ProgressBar value={s.progress} /></div>
+          <li key={s.slug}>
+            <Link href={`/subjects/${s.slug}`} className="group block px-5 py-4 transition-colors duration-200 hover:bg-fog">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[15px] text-graphite group-hover:underline">
+                  {s.name}
+                  <SampleBadge />
+                </span>
+                <span className="text-[13px] text-steel">{s.topicCompleted}/{s.topicTotal} · {s.progress}%</span>
+              </div>
+              <div className="mt-2"><ProgressBar value={s.progress} /></div>
+            </Link>
           </li>
         ))}
       </ul>

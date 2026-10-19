@@ -2,16 +2,177 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ——— Editorial minimal tokens ——— */
 :root {
+  --page-max-width: 1112px;
+
+  --canvas: oklch(0.985 0.002 80);
+  --graphite: oklch(0.2 0.004 78);
+  --ash: oklch(0.965 0.002 80);
+  --fog: oklch(0.95 0.003 80);
+  --ember: #b98a1f;
+  --brass: #a67c1a;
+  --success: #4a7d5e;
+  --danger: #b0574f;
+
+  /* derived — always a % of the text color, never gray hex */
+  --steel: color-mix(in srgb, var(--graphite) 55%, transparent);
+  --slate: color-mix(in srgb, var(--graphite) 42%, transparent);
+  --faint: color-mix(in srgb, var(--graphite) 32%, transparent);
+  --mist: color-mix(in srgb, var(--graphite) 8%, transparent);
+  --mist-strong: color-mix(in srgb, var(--graphite) 14%, transparent);
+
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: oklch(0.16 0.004 78);
+  --graphite: oklch(0.93 0.005 80);
+  --ash: oklch(0.195 0.004 78);
+  --fog: oklch(0.215 0.004 78);
+  --ember: #d9b45b;
+  --brass: #e4c16a;
+  --success: #7fae8d;
+  --danger: #d68a82;
+
+  --steel: color-mix(in srgb, var(--graphite) 62%, transparent);
+  --slate: color-mix(in srgb, var(--graphite) 48%, transparent);
+  --faint: color-mix(in srgb, var(--graphite) 32%, transparent);
+  --mist: color-mix(in srgb, #ffffff 8%, transparent);
+  --mist-strong: color-mix(in srgb, #ffffff 14%, transparent);
+
   color-scheme: dark;
 }
 
-body {
-  background: #000;
-  color: #e5e5e5;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background: var(--canvas);
+    color: var(--graphite);
+    font-family: var(--font-body), Inter, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    transition: background-color 0.25s ease-out, color 0.25s ease-out;
+  }
+  ::selection {
+    background: var(--graphite);
+    color: var(--canvas);
+  }
+  :focus-visible {
+    outline: 1.5px solid var(--graphite);
+    outline-offset: 2px;
+  }
+  a {
+    color: inherit;
+  }
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--mist-strong);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
-/* Minimal functional styling only — no animations, no gradients. */
-a {
-  color: inherit;
+@layer components {
+  /* Serif-300 only for headings / numbers */
+  .editorial-heading {
+    font-family: var(--font-display), Newsreader, Georgia, serif;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+  }
+
+  /* Quiet inputs — bg-fog, mist-strong border, graphite focus, no ring */
+  .input-quiet {
+    background: var(--fog);
+    border: 1px solid var(--mist-strong);
+    border-radius: 7px;
+    padding: 0.75rem 1rem;
+    font-size: 15px;
+    color: var(--graphite);
+    width: 100%;
+  }
+  .input-quiet::placeholder {
+    color: var(--slate);
+    opacity: 0.5;
+  }
+  .input-quiet:focus {
+    outline: none;
+    border-color: var(--graphite);
+  }
+
+  .page-enter {
+    animation: editorial-rise 350ms ease-out both;
+  }
+  .dropdown-panel {
+    animation: editorial-rise 180ms ease-out both;
+    border-radius: 11px;
+    border: 1px solid var(--mist);
+    background: var(--canvas);
+    box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.18);
+  }
+  .modal-panel {
+    animation: editorial-scale 280ms ease-out both;
+  }
+  .animate-editorial-rise {
+    animation: editorial-rise 350ms ease-out both;
+  }
+  .animate-editorial-scale {
+    animation: editorial-scale 280ms ease-out both;
+  }
+}
+
+@keyframes editorial-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes editorial-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--fog) 25%,
+    var(--mist) 50%,
+    var(--fog) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-out infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

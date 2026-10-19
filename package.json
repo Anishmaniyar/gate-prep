@@ -2,7 +2,7 @@
   "name": "gate-tracker",
   "version": "0.1.0",
   "private": true,
-  "description": "GATE 2027 CS Preparation Planner — single-user syllabus, Planly, PYQs, practice, progress tracking",
+  "description": "GATE 2027 CS Preparation Planner â€” single-user syllabus, Goal Planner, Planly, progress tracking",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev:web": "pnpm --filter ./apps/web dev",

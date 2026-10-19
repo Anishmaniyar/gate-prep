@@ -1,6 +1,6 @@
 # GATE 2027 CS Preparation Planner
 
-Single-user personal app: syllabus → topics → resources → PYQs/practice → Planly daily planner → progress + revisions.
+Single-user personal app: syllabus â†’ topics â†’ resources â†’ two-month Goal Planner â†’ Planly daily planner â†’ progress + revisions.
 
 ## Stack
 
@@ -14,9 +14,9 @@ Single-user personal app: syllabus → topics → resources → PYQs/practice �
 2. Start Postgres: `docker compose up -d db`
 3. Install: `pnpm install`
 4. Migrate: `pnpm prisma:migrate`
-5. (Optional sample data): `pnpm prisma:seed` — inserts clearly-labeled SAMPLE syllabus rows only.
+5. Seed the plan: `pnpm prisma:seed` â€” inserts the four subject tracks, chapters, topics, two months, eight weeks, and Planly tasks. Safe to re-run; it updates in place.
 6. Run API: `pnpm dev:api` (http://localhost:4000/api/health)
 7. Run Web: `pnpm dev:web` (http://localhost:3000)
 
-> Do not fabricate official syllabus content or real PYQs. Sample rows are prefixed `SAMPLE` and `isSample`.
-> Real GATE 2027 syllabus + verified PYQs land in Phase 4.
+> Weightage figures are labelled estimates based on past GATE papers/coaching analysis, not official GATE 2027 data.
+> Completion always comes from saved `TopicProgress`; planning values are stored separately.

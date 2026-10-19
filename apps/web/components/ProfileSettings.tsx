@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { DashboardData } from "@/lib/dashboard";
+import { Button, Modal } from "@/components/ui";
 
 function isoDay(dt: string): string {
   return new Date(dt).toISOString().slice(0, 10);
@@ -35,48 +36,51 @@ export function ProfileSettings({ profile, onSaved }: { profile: DashboardData["
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-xs text-neutral-500 underline">
+      <button
+        onClick={() => setOpen(true)}
+        className="text-[13px] text-steel underline transition-colors duration-200 hover:text-ember"
+      >
         Edit profile
       </button>
     );
   }
 
-  const field = "w-full bg-black border border-neutral-800 rounded px-2 py-1.5 text-sm text-neutral-200";
-  const label = "block text-xs text-neutral-500 mb-1";
+  const label = "mb-1 block text-[13px] text-steel";
   return (
-    <div className="mt-3 border border-neutral-800 rounded p-3 bg-neutral-950 grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div>
-        <label className={label} htmlFor="ps-name">Name</label>
-        <input id="ps-name" className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+    <Modal label="Edit profile" onClose={() => setOpen(false)}>
+      <h2 className="font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
+        Edit profile
+      </h2>
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className={label} htmlFor="ps-name">Name</label>
+          <input id="ps-name" className="input-quiet" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </div>
+        <div>
+          <label className={label} htmlFor="ps-target">Exam target</label>
+          <input id="ps-target" className="input-quiet" value={form.examTarget} onChange={(e) => setForm({ ...form, examTarget: e.target.value })} />
+        </div>
+        <div>
+          <label className={label} htmlFor="ps-start">Start date</label>
+          <input id="ps-start" type="date" className="input-quiet" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+        </div>
+        <div>
+          <label className={label} htmlFor="ps-end">Target date</label>
+          <input id="ps-end" type="date" className="input-quiet" value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
+        </div>
+        <div>
+          <label className={label} htmlFor="ps-min">Daily minutes</label>
+          <input id="ps-min" type="number" min={1} className="input-quiet" value={form.dailyStudyMinutes} onChange={(e) => setForm({ ...form, dailyStudyMinutes: e.target.value })} />
+        </div>
+        <div className="flex items-end gap-2">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+        </div>
       </div>
-      <div>
-        <label className={label} htmlFor="ps-target">Exam target</label>
-        <input id="ps-target" className={field} value={form.examTarget} onChange={(e) => setForm({ ...form, examTarget: e.target.value })} />
-      </div>
-      <div>
-        <label className={label} htmlFor="ps-start">Start date</label>
-        <input id="ps-start" type="date" className={field} value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-      </div>
-      <div>
-        <label className={label} htmlFor="ps-end">Target date</label>
-        <input id="ps-end" type="date" className={field} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
-      </div>
-      <div>
-        <label className={label} htmlFor="ps-min">Daily minutes</label>
-        <input id="ps-min" type="number" min={1} className={field} value={form.dailyStudyMinutes} onChange={(e) => setForm({ ...form, dailyStudyMinutes: e.target.value })} />
-      </div>
-      <div className="flex items-end gap-2">
-        <button
-          onClick={save}
-          disabled={saving}
-          className="border border-neutral-600 rounded px-3 py-1.5 text-sm text-neutral-100 disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-        <button onClick={() => setOpen(false)} className="px-3 py-1.5 text-sm text-neutral-500">
-          Cancel
-        </button>
-      </div>
-    </div>
+    </Modal>
   );
 }

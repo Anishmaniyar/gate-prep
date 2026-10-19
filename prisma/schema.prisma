@@ -73,6 +73,18 @@ enum TopicStatus {
   COMPLETED
 }
 
+enum GoalPriority {
+  HIGH
+  MEDIUM
+  SELECTIVE
+}
+
+enum GoalCoverage {
+  CORE
+  SUPPORTING
+  OPTIONAL
+}
+
 // ---------- Profile (single-user) ----------
 
 model Profile {
@@ -87,6 +99,7 @@ model Profile {
   topicProgress       TopicProgress[]
   checkins            Checkin[]
   questionAttempts    QuestionAttempt[]
+  goalPlans           GoalPlan[]
 }
 
 // ---------- Syllabus hierarchy ----------
@@ -311,4 +324,148 @@ model Checkin {
 
   @@unique([profileId, date])
   @@index([date])
+}
+
+// ---------- Two-month goal planner ----------
+// Planning content is kept separate from completion records:
+// GoalTopic links to a real Topic; completion is read from TopicProgress.
+
+model GoalPlan {
+  id                String        @id @default(cuid())
+  profileId         String
+  profile           Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title             String
+  startDate         DateTime
+  endDate           DateTime
+  dailyStudyMinutes Int           @default(90)
+  strategy          String?
+  // Existing StudyPlan that owns the Planly tasks for these weeks.
+  studyPlanId       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  months            GoalMonth[]
+  weeks             GoalWeek[]
+  subjects          GoalSubject[]
+
+  @@index([profileId])
+}
+
+model GoalSubject {
+  id               String        @id @default(cuid())
+  goalPlanId       String
+  goalPlan         GoalPlan      @relation(fields: [goalPlanId], references: [id], onDelete: Cascade)
+  subjectId        String?
+  name             String
+  slug             String
+  priority         GoalPriority  @default(MEDIUM)
+  // Historical weightage is an ESTIMATE, never official GATE 2027 data.
+  weightageEstimate Float?
+  weightageSource  String?
+  weightageYear    Int?
+  plannedCoverage  Int           @default(100)
+  displayOrder     Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  chapters         GoalChapter[]
+  monthSubjects    GoalMonthSubject[]
+
+  @@unique([goalPlanId, slug])
+  @@index([goalPlanId, displayOrder])
+}
+
+model GoalChapter {
+  id            String      @id @default(cuid())
+  goalSubjectId String
+  goalSubject   GoalSubject @relation(fields: [goalSubjectId], references: [id], onDelete: Cascade)
+  name          String
+  slug          String
+  priority      GoalPriority @default(MEDIUM)
+  displayOrder  Int         @default(0)
+  topics        GoalTopic[]
+
+  @@unique([goalSubjectId, slug])
+  @@index([goalSubjectId, displayOrder])
+}
+
+model GoalTopic {
+  id              String       @id @default(cuid())
+  goalChapterId   String
+  goalChapter     GoalChapter  @relation(fields: [goalChapterId], references: [id], onDelete: Cascade)
+  // Real syllabus topic used to read saved completion (TopicProgress).
+  topicId         String?
+  name            String
+  slug            String
+  priority        GoalPriority @default(MEDIUM)
+  coverage        GoalCoverage @default(CORE)
+  plannedStart    DateTime?
+  plannedEnd      DateTime?
+  displayOrder    Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  weekTopics      GoalWeekTopic[]
+
+  @@unique([goalChapterId, slug])
+  @@index([goalChapterId, displayOrder])
+  @@index([topicId])
+}
+
+model GoalMonth {
+  id          String              @id @default(cuid())
+  goalPlanId  String
+  goalPlan    GoalPlan            @relation(fields: [goalPlanId], references: [id], onDelete: Cascade)
+  title       String
+  startDate   DateTime
+  endDate     DateTime
+  goal        String?
+  displayOrder Int                @default(0)
+  subjects    GoalMonthSubject[]
+  weeks       GoalWeek[]
+
+  @@index([goalPlanId, displayOrder])
+}
+
+model GoalMonthSubject {
+  id            String      @id @default(cuid())
+  goalMonthId   String
+  goalMonth     GoalMonth   @relation(fields: [goalMonthId], references: [id], onDelete: Cascade)
+  goalSubjectId String
+  goalSubject   GoalSubject @relation(fields: [goalSubjectId], references: [id], onDelete: Cascade)
+  focus         String?
+  displayOrder  Int         @default(0)
+
+  @@unique([goalMonthId, goalSubjectId])
+  @@index([goalMonthId, displayOrder])
+}
+
+model GoalWeek {
+  id           String      @id @default(cuid())
+  goalPlanId   String
+  goalPlan     GoalPlan    @relation(fields: [goalPlanId], references: [id], onDelete: Cascade)
+  goalMonthId  String?
+  goalMonth    GoalMonth?  @relation(fields: [goalMonthId], references: [id], onDelete: SetNull)
+  weekNumber   Int
+  title        String
+  startDate    DateTime
+  endDate      DateTime
+  goal         String?
+  // Planned cumulative target for the end of this week (planning data).
+  targetPercent Int        @default(0)
+  displayOrder Int         @default(0)
+  topics       GoalWeekTopic[]
+
+  @@unique([goalPlanId, weekNumber])
+  @@index([goalPlanId, displayOrder])
+}
+
+model GoalWeekTopic {
+  id          String    @id @default(cuid())
+  goalWeekId  String
+  goalWeek    GoalWeek  @relation(fields: [goalWeekId], references: [id], onDelete: Cascade)
+  goalTopicId String
+  goalTopic   GoalTopic @relation(fields: [goalTopicId], references: [id], onDelete: Cascade)
+  isTarget    Boolean   @default(true)
+
+  @@unique([goalWeekId, goalTopicId])
+  @@index([goalWeekId])
+  @@index([goalTopicId])
 }

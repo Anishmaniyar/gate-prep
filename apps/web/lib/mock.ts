@@ -3,7 +3,6 @@
 
 import type { TopicNode } from "@/components/TopicTree";
 import type { Task } from "@/components/TaskList";
-import type { QuestionItem } from "@/components/QuestionList";
 
 export const MOCK_PROFILE = {
   name: "Aspirant",
@@ -34,14 +33,6 @@ export const MOCK_TASKS: Task[] = [
   { id: "task-1", title: "SAMPLE: Learn Implication basics", taskType: "LEARNING", estimatedMinutes: 60, status: "COMPLETED", topicName: "Implication" },
   { id: "task-2", title: "SAMPLE: Solve implication PYQs", taskType: "PYQ", estimatedMinutes: 45, status: "PENDING", topicName: "Implication" },
   { id: "task-3", title: "SAMPLE: Revise truth tables", taskType: "REVISION", estimatedMinutes: 20, status: "PENDING", topicName: "Truth tables" },
-];
-
-export const MOCK_PYQS: QuestionItem[] = [
-  { id: "q-1", sourceType: "PYQ", questionType: "MCQ", content: "SAMPLE PYQ placeholder (not a real GATE question).", year: 2020, marks: 1, verified: false, topicName: "Implication" },
-];
-
-export const MOCK_PRACTICE: QuestionItem[] = [
-  { id: "p-1", sourceType: "BOOK", questionType: "MCQ", content: "SAMPLE book reference: Rosen, Ch.1, Ex.12 (do not copy text).", verified: false, topicName: "Implication" },
 ];
 
 export const MOCK_REVISIONS = [

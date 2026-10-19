@@ -1,33 +1,30 @@
 import Link from "next/link";
-import { QuestionList } from "@/components/QuestionList";
 import { TopicTree } from "@/components/TopicTree";
-import { ProgressBar, SampleBadge, SectionTitle, Card } from "@/components/ui";
-import { MOCK_TOPICS, MOCK_PYQS, MOCK_PRACTICE } from "@/lib/mock";
+import { ProgressBar, SampleBadge, SectionCard } from "@/components/ui";
+import { MOCK_TOPICS } from "@/lib/mock";
 
 export default function ChapterDetailPage({ params }: { params: { id: string } }) {
   return (
     <div>
-      <Link href="/subjects" className="text-xs text-neutral-500">← Subjects</Link>
-      <h1 className="text-lg font-medium text-neutral-100 mt-2">Chapter: {params.id}<SampleBadge /></h1>
-      <div className="flex items-center gap-3 mt-3">
+      <Link href="/subjects" className="text-[13px] text-steel transition-colors hover:text-ember">← Subjects</Link>
+      <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">
+        {params.id}<SampleBadge />
+      </h1>
+      <div className="mt-6 flex items-center gap-3">
         <div className="flex-1"><ProgressBar value={50} /></div>
-        <span className="text-sm text-neutral-400">50%</span>
+        <span className="font-display text-subheading font-light tracking-[-0.02em] text-graphite">50%</span>
       </div>
 
-      <SectionTitle>Topics & subtopics</SectionTitle>
-      <TopicTree topics={MOCK_TOPICS} />
+      <div className="mt-8 space-y-6">
+        <SectionCard title="Topics & subtopics">
+          <TopicTree topics={MOCK_TOPICS} />
+        </SectionCard>
 
-      <SectionTitle>Resources</SectionTitle>
-      <Card>
-        <div className="text-sm text-neutral-200">SAMPLE Logic lecture (placeholder)<SampleBadge /></div>
-        <div className="text-xs text-neutral-500 mt-1">VIDEO · https://example.com/sample-logic</div>
-      </Card>
-
-      <SectionTitle>Related PYQs</SectionTitle>
-      <QuestionList questions={MOCK_PYQS} />
-
-      <SectionTitle>Related practice</SectionTitle>
-      <QuestionList questions={MOCK_PRACTICE} />
+        <SectionCard title="Resources">
+          <div className="text-[15px] text-graphite">SAMPLE Logic lecture (placeholder)<SampleBadge /></div>
+          <div className="mt-1 text-[13px] text-steel">VIDEO · https://example.com/sample-logic</div>
+        </SectionCard>
+      </div>
     </div>
   );
 }
