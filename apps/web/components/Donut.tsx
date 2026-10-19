@@ -26,9 +26,8 @@ export function Donut({ percent, completed, total }: { percent: number; complete
           </span>
         </div>
       </div>
-      <div className="min-w-0">
-        <div className="text-[15px] text-graphite">Topics completed: {completed} / {total}</div>
-        <div className="mt-1 text-[13px] text-steel">Computed from topic completion data.</div>
+      <div className="min-w-0 text-[13px] text-steel">
+        <span className="text-graphite tabular-nums">{completed}</span> of {total} topics completed
       </div>
     </div>
   );

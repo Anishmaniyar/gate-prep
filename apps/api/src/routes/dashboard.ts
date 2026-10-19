@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../db.js";
 import { overallProgress, subjectProgress } from "../services/progress.js";
-import { mergeActivity, calcStreak, utcDayStart, dayKey } from "../services/activity.js";
+import { mergeActivity, calcStreak, isActiveDay, utcDayStart, dayKey } from "../services/activity.js";
 
 export const dashboardRouter = Router();
 
@@ -20,6 +20,41 @@ async function getOrCreateProfile() {
   }
   return profile;
 }
+
+/**
+ * One activity map per profile: manual check-ins merged with completed tasks.
+ * Shared by the dashboard aggregate and the lightweight streak endpoint.
+ */
+async function loadActivity(profileId: string) {
+  const [checkins, completedTasks] = await Promise.all([
+    prisma.checkin.findMany({
+      where: { profileId },
+      orderBy: { date: "asc" },
+      take: 500,
+    }),
+    prisma.studyTask.findMany({
+      where: { status: "COMPLETED" },
+      select: { scheduledDate: true, estimatedMinutes: true },
+    }),
+  ]);
+  return mergeActivity(checkins, completedTasks);
+}
+
+/**
+ * GET /api/streak
+ * Lightweight counter for the app shell: current streak + whether the
+ * reference day (today) already counts as active.
+ */
+dashboardRouter.get("/streak", async (_req, res) => {
+  const profile = await getOrCreateProfile();
+  const activity = await loadActivity(profile.id);
+  const now = new Date();
+  const today = activity.get(dayKey(now));
+  res.json({
+    streak: calcStreak(activity, now),
+    activeToday: today ? isActiveDay(today) : false,
+  });
+});
 
 /**
  * GET /api/dashboard?date=YYYY-MM-DD
@@ -74,18 +109,11 @@ dashboardRouter.get("/dashboard", async (req, res) => {
       })
     : [];
 
-  const checkins = await prisma.checkin.findMany({
-    where: { profileId: profile.id },
-    orderBy: { date: "asc" },
-    take: 500,
-  });
-  const completedTasks = await prisma.studyTask.findMany({
-    where: { status: "COMPLETED" },
-    select: { scheduledDate: true, estimatedMinutes: true },
-  });
-  const activityMap = mergeActivity(checkins, completedTasks);
+  const activityMap = await loadActivity(profile.id);
   const activity = [...activityMap.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
   const streak = calcStreak(activityMap, ref);
+  const refActivity = activityMap.get(dayKey(ref));
+  const activeToday = refActivity ? isActiveDay(refActivity) : false;
 
   const revisions = await prisma.revisionSchedule.findMany({
     where: { status: { in: ["PENDING", "OVERDUE"] } },
@@ -103,6 +131,7 @@ dashboardRouter.get("/dashboard", async (req, res) => {
     tasks,
     activity,
     streak,
+    activeToday,
     revisions: revisions.map((r) => ({
       id: r.id,
       status: r.status,

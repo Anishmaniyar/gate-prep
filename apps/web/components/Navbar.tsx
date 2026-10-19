@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { STREAK_EVENT, type StreakState } from "@/lib/dashboard";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -33,16 +35,40 @@ export function Navbar() {
   const pathname = usePathname();
   const { dark, toggle } = useTheme();
   const [menu, setMenu] = useState(false);
+  const [streak, setStreak] = useState<StreakState | null>(null);
+
+  // Live streak: refetch on navigation/focus, and accept broadcast updates
+  // from the dashboard after a task is completed.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const res = await api.get<StreakState>("/streak");
+      if (!cancelled && res) setStreak(res);
+    };
+    const onStreak = (event: Event) => {
+      const detail = (event as CustomEvent<StreakState>).detail;
+      if (detail) setStreak(detail);
+      else load();
+    };
+    load();
+    window.addEventListener(STREAK_EVENT, onStreak);
+    window.addEventListener("focus", load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(STREAK_EVENT, onStreak);
+      window.removeEventListener("focus", load);
+    };
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 h-14 bg-canvas/90 backdrop-blur border-b border-mist">
       <div className="mx-auto flex h-14 w-full max-w-[var(--page-max-width)] items-center gap-3 px-6">
         {/* Brand mark: 20px graphite square + serif wordmark */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0" aria-label="Axiom home">
-          <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-graphite text-canvas font-display text-[13px] font-light leading-none">
+          <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-graphite text-canvas font-display text-[13px] font-normal leading-none">
             A
           </span>
-          <span className="font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
+          <span className="font-display text-[19px] font-normal tracking-[-0.02em] text-graphite">
             Axiom
           </span>
         </Link>
@@ -70,13 +96,25 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2">
           {/* Streak pill — the one ember accent per screen */}
           <span
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-mist bg-canvas px-3 py-1 text-[11px] text-steel"
-            title="Study streak"
+            className="inline-flex items-center gap-1.5 rounded-full border border-mist bg-canvas px-3 py-1 text-[11px] text-steel"
+            title={
+              streak?.activeToday
+                ? "Study streak · active today"
+                : "Study streak · complete a task today to keep it"
+            }
+            aria-live="polite"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-ember" aria-hidden="true">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className={streak?.activeToday ? "text-ember" : "text-slate"}
+              aria-hidden="true"
+            >
               <path d="M12 2c1 4-2 5-2 8a4.5 4.5 0 0 0 9 .5C19 6 14 4 12 2zm-1 20a6.5 6.5 0 0 1-6.4-7.6c.4-2 1.7-3.7 2.9-5.2.4 1.4 1.2 2.4 2.5 3 .3-2.2 1.2-4 2.5-5.4A8.5 8.5 0 0 0 11 22z" />
             </svg>
-            <span className="text-graphite">0</span> day streak
+            <span className="text-graphite tabular-nums">{streak?.streak ?? "—"}</span> day streak
           </span>
 
           {/* Theme toggle */}
@@ -113,7 +151,7 @@ export function Navbar() {
                   <div className="px-4 py-2 text-[13px] text-graphite">Aspirant</div>
                   <div className="mx-4 border-t border-mist" />
                   <Link href="/" onClick={() => setMenu(false)} className="block px-4 py-2 text-[13px] text-steel hover:bg-fog hover:text-graphite">
-                    Workspace
+                    Dashboard
                   </Link>
                   <Link href="/subjects" onClick={() => setMenu(false)} className="block px-4 py-2 text-[13px] text-steel hover:bg-fog hover:text-graphite">
                     Syllabus

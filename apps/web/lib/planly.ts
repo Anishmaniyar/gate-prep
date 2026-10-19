@@ -102,7 +102,7 @@ export function formatShortDate(iso: string) {
 }
 
 export function formatRange(start: string, end: string) {
-  return `${formatShortDate(start)} â€“ ${formatShortDate(end)}`;
+  return `${formatShortDate(start)} – ${formatShortDate(end)}`;
 }
 
 export function weekdayName(iso: string) {
@@ -376,7 +376,7 @@ export function buildPreviewWeeks(completedIds?: Set<string>): PlannerWeek[] {
           ? [
               {
                 label: "Task 1",
-                title: `Weekly review â€” ${meta.title}`,
+                title: `Weekly review — ${meta.title}`,
                 type: "REVISION",
                 minutes: 45,
                 topic: { ...REVIEW, topic: meta.title },
@@ -399,21 +399,21 @@ export function buildPreviewWeeks(completedIds?: Set<string>): PlannerWeek[] {
           : [
               {
                 label: "Task 1",
-                title: `${topicA.subject} â€” ${topicA.topic}`,
+                title: `${topicA.subject} — ${topicA.topic}`,
                 type: "LEARNING",
                 minutes: 45,
                 topic: topicA,
               },
               {
                 label: "Task 2",
-                title: `${topicB.subject} â€” ${topicB.topic}`,
+                title: `${topicB.subject} — ${topicB.topic}`,
                 type: "LEARNING",
                 minutes: 25,
                 topic: topicB,
               },
               {
                 label: "Practice",
-                title: `Practice â€” ${rotate.topic}`,
+                title: `Practice — ${rotate.topic}`,
                 type: "PRACTICE",
                 minutes: 20,
                 topic: rotate,
@@ -421,14 +421,14 @@ export function buildPreviewWeeks(completedIds?: Set<string>): PlannerWeek[] {
               dayIndex % 3 === 0
                 ? {
                     label: "PYQ",
-                    title: `PYQ â€” ${rotate.topic}`,
+                    title: `PYQ — ${rotate.topic}`,
                     type: "PYQ",
                     minutes: 15,
                     topic: rotate,
                   }
                 : {
                     label: "Revision",
-                    title: `Revision â€” ${rotate.topic}`,
+                    title: `Revision — ${rotate.topic}`,
                     type: "REVISION",
                     minutes: 15,
                     topic: rotate,
@@ -436,14 +436,14 @@ export function buildPreviewWeeks(completedIds?: Set<string>): PlannerWeek[] {
               dayIndex % 2 === 0
                 ? {
                     label: "Aptitude",
-                    title: "General Aptitude â€” percentages and ratios",
+                    title: "General Aptitude — percentages and ratios",
                     type: "LEARNING",
                     minutes: 10,
                     topic: APTITUDE,
                   }
                 : {
                     label: "Revision",
-                    title: `Recall â€” ${topicB.topic}`,
+                    title: `Recall — ${topicB.topic}`,
                     type: "REVISION",
                     minutes: 10,
                     topic: topicB,

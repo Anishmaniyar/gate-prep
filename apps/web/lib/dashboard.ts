@@ -35,6 +35,11 @@ export type DashboardRevision = {
   chapterId: string;
 };
 
+export type StreakState = { streak: number; activeToday: boolean };
+
+/** Broadcast so the shell counter and the dashboard never disagree. */
+export const STREAK_EVENT = "axiom:streak-changed";
+
 export type DashboardData = {
   profile: {
     id: string;
@@ -51,6 +56,7 @@ export type DashboardData = {
   tasks: DashboardTask[];
   activity: DayActivity[];
   streak: number;
+  activeToday: boolean;
   revisions: DashboardRevision[];
 };
 

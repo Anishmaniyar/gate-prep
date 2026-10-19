@@ -1,8 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { ProgressBar } from "@/components/ui";
 import {
   PREVIEW_COMPLETED_KEY,
   PREVIEW_WEEKS,
@@ -57,6 +66,24 @@ function StatusPill({ status }: { status: PlannerStatus }) {
       className={`inline-flex shrink-0 items-center rounded-tags border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_CLASS[status]}`}
     >
       {status}
+    </span>
+  );
+}
+
+function StatCell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="px-4 py-3">
+      <p className="text-[10px] uppercase tracking-wide text-slate">{label}</p>
+      <div className="mt-0.5 text-[19px] leading-tight text-graphite tabular-nums">{children}</div>
+    </div>
+  );
+}
+
+function WeekStat({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="block min-w-0">
+      <span className="block text-[10px] uppercase tracking-wide text-slate">{label}</span>
+      <span className="mt-0.5 block truncate text-[12px] text-graphite tabular-nums">{value}</span>
     </span>
   );
 }
@@ -201,7 +228,7 @@ function TaskDetails({ task }: { task: PlannerTask }) {
             {task.practiceNotes
               ? task.practiceNotes
               : task.taskType === "PRACTICE"
-                ? `Solve 10â€“15 questions on ${task.topic ?? "this topic"} and record mistakes.`
+                ? `Solve 10–15 questions on ${task.topic ?? "this topic"} and record mistakes.`
                 : "No additional practice attached."}
           </dd>
         </div>
@@ -212,7 +239,7 @@ function TaskDetails({ task }: { task: PlannerTask }) {
               <span>
                 {pyqs
                   .map((q) => q.sourceRef ?? (q.year ? `GATE ${q.year}` : "Linked question"))
-                  .join(" Â· ")}
+                  .join(" · ")}
               </span>
             ) : task.pyqNotes ? (
               task.pyqNotes
@@ -320,9 +347,16 @@ function DayRow({
               </span>
             )}
           </span>
-          <span className="mt-0.5 block text-[11px] text-slate">
-            {dayScheduleNote(day)}
-            {day.total > 0 && ` Â· ${day.completed}/${day.total} tasks`}
+          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate">
+            <span>{dayScheduleNote(day)}</span>
+            {day.total > 0 && (
+              <>
+                <span aria-hidden="true" className="text-faint">·</span>
+                <span className="tabular-nums">
+                  {day.completed}/{day.total} tasks
+                </span>
+              </>
+            )}
           </span>
         </span>
         <StatusPill status={day.status} />
@@ -375,32 +409,41 @@ function WeekRow({
 }) {
   return (
     <section className="overflow-hidden rounded-cards border border-mist bg-canvas">
-      <div className="flex items-stretch">
+      <div className="flex items-start gap-3 px-4 py-3">
         <button
           onClick={onToggleWeek}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors duration-200 hover:bg-fog"
+          className="flex min-w-0 flex-1 items-start gap-3 text-left"
         >
-          <Chevron open={open} />
+          <span className="mt-1 shrink-0">
+            <Chevron open={open} />
+          </span>
           <span className="min-w-0 flex-1">
-            <span className="flex flex-wrap items-baseline gap-x-2">
-              <span className="text-[15px] font-medium text-graphite">Week {week.number}</span>
-              <span className="text-[13px] text-steel">â€” {week.title}</span>
-            </span>
-            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate">
-              <span>{formatDateRange(week.startDate, week.endDate)}</span>
-              <span aria-hidden="true">Â·</span>
-              <span>
-                {week.studyDaysCompleted}/{week.studyDaysTotal} study days
+            <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="shrink-0 rounded-tags border border-mist-strong bg-fog px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate tabular-nums">
+                Week {week.number}
               </span>
-              <span aria-hidden="true">Â·</span>
-              <span>
-                {week.completed}/{week.total} tasks
+              <span className="min-w-0 text-[15px] font-medium leading-snug text-graphite">
+                {week.title}
+              </span>
+            </span>
+            <span className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-mist pt-2 sm:grid-cols-3 sm:divide-x sm:divide-mist">
+              <span className="col-span-2 min-w-0 sm:col-span-1">
+                <WeekStat label="Dates" value={formatDateRange(week.startDate, week.endDate)} />
+              </span>
+              <span className="min-w-0 sm:pl-4">
+                <WeekStat
+                  label="Study days"
+                  value={`${week.studyDaysCompleted} of ${week.studyDaysTotal}`}
+                />
+              </span>
+              <span className="min-w-0 sm:pl-4">
+                <WeekStat label="Tasks" value={`${week.completed} of ${week.total}`} />
               </span>
             </span>
           </span>
         </button>
-        <div className="flex items-center pr-3">
+        <div className="shrink-0 pt-0.5">
           <StatusPill status={week.status} />
         </div>
       </div>
@@ -636,7 +679,7 @@ function PlanlyContent() {
 
   return (
     <div>
-      <p className="text-[13px] uppercase tracking-wide text-slate">Week â†’ day â†’ task</p>
+      <p className="text-[13px] uppercase tracking-wide text-slate">Week → day → task</p>
       <h1 className="editorial-heading mt-2 text-heading tracking-[-0.02em] text-graphite">Planly</h1>
       <p className="mt-2 max-w-2xl text-[13px] text-steel">
         Eight weeks, seven days each, with every task kept independent. Expand a week, then a day,
@@ -648,45 +691,43 @@ function PlanlyContent() {
           <span className="rounded-tags bg-canvas px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-steel">
             Preview data
           </span>
-          API or database unavailable â€” checkbox changes and notes are saved in this browser.
+          API or database unavailable — checkbox changes and notes are saved in this browser.
         </p>
       )}
 
-      <div className="mt-6 rounded-cards border border-mist bg-canvas px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-steel">
-          <span>
-            <span className="text-graphite">
-              {totals.completed}/{totals.total}
-            </span>{" "}
-            tasks complete
-          </span>
-          <span className="text-graphite">{totals.percent}%</span>
-          <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-fog sm:block">
-            <span
-              className="block h-1.5 rounded-full bg-graphite transition-all duration-200"
-              style={{ width: `${totals.percent}%` }}
-            />
-          </span>
-          <span>
-            <span className="text-graphite">
-              {totals.studyDone}/{totals.studyTotal}
-            </span>{" "}
-            study days complete
-          </span>
+      <div className="mt-6 overflow-hidden rounded-cards border border-mist bg-canvas">
+        <div className="grid grid-cols-1 divide-y divide-mist sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <StatCell label="Tasks complete">
+            {totals.completed}
+            <span className="text-[12px] text-steel"> / {totals.total}</span>
+          </StatCell>
+          <StatCell label="Progress">
+            {totals.percent}%
+            <div className="mt-1.5 w-24 max-w-full">
+              <ProgressBar value={totals.percent} />
+            </div>
+          </StatCell>
+          <StatCell label="Study days complete">
+            {totals.studyDone}
+            <span className="text-[12px] text-steel"> / {totals.studyTotal}</span>
+          </StatCell>
         </div>
         {subjectStats.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-mist pt-2.5">
-            {subjectStats.map(([name, stat]) => (
-              <span
-                key={name}
-                className="inline-flex items-center gap-1.5 rounded-tags border border-mist bg-ash px-2 py-0.5 text-[11px] text-steel"
-              >
-                {name}
-                <span className="text-graphite">
-                  {stat.completed}/{stat.total}
+          <div className="border-t border-mist px-4 py-2.5">
+            <p className="text-[10px] uppercase tracking-wide text-slate">By subject</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {subjectStats.map(([name, stat]) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1.5 rounded-tags border border-mist bg-ash px-2 py-0.5 text-[11px] text-steel"
+                >
+                  {name}
+                  <span className="text-graphite tabular-nums">
+                    {stat.completed}/{stat.total}
+                  </span>
                 </span>
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

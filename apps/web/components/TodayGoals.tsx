@@ -37,11 +37,8 @@ export function TodayGoals({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <div>
-          <div className="text-[15px] font-medium text-graphite">Today&apos;s Goals</div>
-          <div className="mt-0.5 text-[13px] text-steel">{formatDay(date)}</div>
-        </div>
-        <div className="whitespace-nowrap text-[13px] text-slate">
+        <div className="text-[13px] text-steel">{formatDay(date)}</div>
+        <div className="whitespace-nowrap text-[13px] text-slate tabular-nums">
           {done}/{tasks.length} done
         </div>
       </div>

@@ -28,8 +28,8 @@ app.use("/api", goalPlanRouter);
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  console.log(`API listening on http://localhost:${config.port}`);
+app.listen(config.port, "0.0.0.0", () => {
+  console.log(`API listening on port ${config.port}`);
 });
 
 process.on("SIGTERM", async () => {

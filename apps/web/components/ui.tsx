@@ -68,7 +68,7 @@ export function SectionCard({
   return (
     <section className="rounded-cards border border-mist bg-canvas p-6 md:p-7">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
+        <h2 className="font-display text-[19px] font-normal tracking-[-0.02em] text-graphite">
           {title}
         </h2>
         {actionHref && (
@@ -87,7 +87,7 @@ export function SectionCard({
 
 export function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mb-3 mt-8 font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
+    <h2 className="mb-3 mt-8 font-display text-[19px] font-normal tracking-[-0.02em] text-graphite">
       {children}
     </h2>
   );

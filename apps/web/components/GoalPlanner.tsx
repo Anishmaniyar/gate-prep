@@ -4,17 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import {
-  COVERAGE_LABEL,
   PRIORITY_LABEL,
   STATUS_LABEL,
-  type GoalChapter,
+  type GoalMonth,
   type GoalPlanResponse,
-  type GoalSubject,
-  type GoalTopic,
   type GoalWeek,
-  type TopicStatus,
 } from "@/lib/goalPlan";
-import { Button, Chip, Modal, ProgressBar, SectionCard } from "@/components/ui";
+import { Button, ProgressBar, SectionCard } from "@/components/ui";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -29,237 +25,125 @@ function formatRange(start: string, end: string) {
   return `${formatDate(start)} – ${formatDate(end)}`;
 }
 
-function isoDay(iso: string | null) {
-  return iso ? new Date(iso).toISOString().slice(0, 10) : "";
-}
-
-function StatusSelect({
-  topic,
-  onChanged,
-}: {
-  topic: GoalTopic;
-  onChanged: () => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  if (!topic.topicId) {
-    return <span className="text-[13px] text-slate">No linked syllabus topic</span>;
-  }
-  const update = async (status: TopicStatus) => {
-    setBusy(true);
-    await api.patch(`/topics/${topic.topicId}/progress`, { status });
-    setBusy(false);
-    onChanged();
+function parseTargetFocus(focus: string): { target: string | null; points: string[] } {
+  const trimmed = focus.trim();
+  const match = trimmed.match(/^Target\s+([^:]+):\s*(.*)$/i);
+  const target = match ? match[1].trim() : null;
+  const body = (match ? match[2] : trimmed).replace(/\.$/, "");
+  return {
+    target,
+    points: body
+      .split(/,\s*/)
+      .map((point) => point.trim())
+      .filter(Boolean),
   };
+}
+
+function parseGoalGroups(goal: string): { label: string | null; points: string[] }[] {
+  return goal
+    .split(/\.\s+/)
+    .map((chunk) => chunk.trim().replace(/\.$/, ""))
+    .filter(Boolean)
+    .map((chunk) => {
+      const match = chunk.match(/^([^:]{1,60}):\s*(.*)$/);
+      const label = match ? match[1].trim() : null;
+      const body = match ? match[2] : chunk;
+      return {
+        label,
+        points: body
+          .split(/,\s*/)
+          .map((point) => point.trim())
+          .filter(Boolean),
+      };
+    });
+}
+
+function PointList({
+  points,
+  size = "sm",
+  columns = 2,
+}: {
+  points: string[];
+  size?: "sm" | "md";
+  columns?: 1 | 2;
+}) {
+  const text = size === "md" ? "text-[13px] leading-[1.6]" : "text-[11px] leading-[1.5]";
   return (
-    <select
-      value={topic.status}
-      disabled={busy}
-      onChange={(e) => update(e.target.value as TopicStatus)}
-      aria-label={`Status for ${topic.name}`}
-      className="rounded-buttons border border-mist-strong bg-canvas px-2 py-1 text-[13px] text-graphite disabled:opacity-50"
+    <ul
+      className={`mt-1 grid grid-cols-1 gap-x-4 gap-y-1 ${columns === 2 ? "sm:grid-cols-2" : ""}`}
     >
-      {(Object.keys(STATUS_LABEL) as TopicStatus[]).map((s) => (
-        <option key={s} value={s}>
-          {STATUS_LABEL[s]}
-        </option>
+      {points.map((point) => (
+        <li key={point} className={`flex gap-1.5 text-steel ${text}`}>
+          <span
+            aria-hidden="true"
+            className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-mist-strong"
+          />
+          <span className="min-w-0">{point}</span>
+        </li>
       ))}
-    </select>
+    </ul>
   );
 }
 
-function TopicRow({
-  topic,
-  onChanged,
-  onEdit,
-}: {
-  topic: GoalTopic;
-  onChanged: () => void;
-  onEdit: (topic: GoalTopic) => void;
-}) {
+function MonthStat({ label, value }: { label: string; value: string }) {
   return (
-    <li className="flex flex-wrap items-center gap-2 py-2.5">
-      <span className="min-w-0 flex-1 text-[15px] text-graphite">{topic.name}</span>
-      <span className="text-[13px] text-steel">{PRIORITY_LABEL[topic.priority]}</span>
-      <span className="text-[13px] text-slate">{COVERAGE_LABEL[topic.coverage]}</span>
-      {topic.plannedStart && topic.plannedEnd && (
-        <span className="text-[13px] text-slate">
-          {formatRange(topic.plannedStart, topic.plannedEnd)}
-        </span>
-      )}
-      <StatusSelect topic={topic} onChanged={onChanged} />
-      <Button variant="ghost" size="sm" onClick={() => onEdit(topic)} aria-label={`Edit plan for ${topic.name}`}>
-        Edit
-      </Button>
-    </li>
-  );
-}
-
-function ChapterBlock({
-  chapter,
-  onChanged,
-  onEdit,
-}: {
-  chapter: GoalChapter;
-  onChanged: () => void;
-  onEdit: (topic: GoalTopic) => void;
-}) {
-  return (
-    <div className="mt-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <h4 className="text-[15px] font-medium text-graphite">{chapter.name}</h4>
-        <span className="text-[13px] text-slate">{PRIORITY_LABEL[chapter.priority]}</span>
-      </div>
-      <ul className="mt-1 divide-y divide-mist">
-        {chapter.topics.map((t) => (
-          <TopicRow key={t.id} topic={t} onChanged={onChanged} onEdit={onEdit} />
-        ))}
-      </ul>
+    <div className="bg-canvas px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-slate">{label}</p>
+      <p className="mt-0.5 text-[13px] text-graphite tabular-nums">{value}</p>
     </div>
   );
 }
 
-function SubjectCard({
-  subject,
-  onChanged,
-}: {
-  subject: GoalSubject;
-  onChanged: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<GoalTopic | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ coverage: "CORE", plannedStart: "", plannedEnd: "" });
-
-  const startEdit = (topic: GoalTopic) => {
-    setEditing(topic);
-    setForm({
-      coverage: topic.coverage,
-      plannedStart: isoDay(topic.plannedStart),
-      plannedEnd: isoDay(topic.plannedEnd),
-    });
-  };
-
-  const save = async () => {
-    if (!editing) return;
-    setSaving(true);
-    await api.patch(`/goal-topics/${editing.id}`, {
-      coverage: form.coverage,
-      plannedStart: form.plannedStart ? new Date(form.plannedStart + "T00:00:00.000Z").toISOString() : null,
-      plannedEnd: form.plannedEnd ? new Date(form.plannedEnd + "T00:00:00.000Z").toISOString() : null,
-    });
-    setSaving(false);
-    setEditing(null);
-    onChanged();
-  };
-
+function MonthCard({ month }: { month: GoalMonth }) {
   return (
-    <section className="rounded-cards border border-mist bg-canvas p-6 md:p-7">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
-          {subject.name}
-        </h3>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={`${open ? "Collapse" : "Expand"} ${subject.name}`}
-          className="rounded-buttons px-2 py-1 text-[13px] text-slate transition-colors duration-200 hover:bg-fog hover:text-graphite"
-        >
-          {open ? "Collapse −" : "Expand +"}
-        </button>
+    <SectionCard title={month.title}>
+      <p className="text-[13px] text-steel">{formatRange(month.startDate, month.endDate)}</p>
+
+      <div className="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-buttons border border-mist bg-mist">
+        <MonthStat label="Topics" value={`${month.progress.completed}/${month.progress.total}`} />
+        <MonthStat label="Weeks" value={`${month.weeksCompleted}/${month.weeksTotal}`} />
+        <MonthStat label="Progress" value={`${month.progress.percent}%`} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <Chip label="Priority" count={PRIORITY_LABEL[subject.priority]} />
-        <Chip label="Planned coverage" count={`${subject.plannedCoverage}%`} />
-        <Chip label="Actual" count={`${subject.progress.percent}%`} />
-        {subject.weightageEstimate !== null && (
-          <Chip label="Est. weightage" count={`~${subject.weightageEstimate}%`} />
-        )}
-      </div>
-      <div className="mt-3">
-        <ProgressBar value={subject.progress.percent} />
-      </div>
-      <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-[13px] text-steel">
-        <span>
-          {subject.progress.completed}/{subject.progress.total} topics completed ·{" "}
-          {subject.progress.inProgress} in progress
-        </span>
-        {subject.weightageEstimate !== null && (
-          <span title={subject.weightageSource ?? undefined}>
-            Estimate only — not an official GATE 2027 distribution
-          </span>
-        )}
+      <div className="mt-2">
+        <ProgressBar value={month.progress.percent} />
       </div>
 
-      {open && (
-        <div className="mt-5 border-t border-mist pt-2">
-          {subject.chapters.map((c) => (
-            <ChapterBlock key={c.id} chapter={c} onChanged={onChanged} onEdit={startEdit} />
-          ))}
+      {month.goal && (
+        <div className="mt-4 border-t border-mist pt-3">
+          <p className="text-[10px] uppercase tracking-wide text-slate">Month focus</p>
+          <p className="mt-1 text-[13px] leading-[1.6] text-graphite">{month.goal}</p>
         </div>
       )}
 
-      {editing && (
-        <Modal label={`Edit plan for ${editing.name}`} onClose={() => setEditing(null)}>
-          <h2 className="font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
-            {editing.name}
-          </h2>
-          <p className="mt-1 text-[13px] text-steel">
-            Planned coverage and target dates are planning data. Completion stays separate.
-          </p>
-          <div className="mt-5 space-y-3">
-            <div>
-              <label className="mb-1 block text-[13px] text-steel" htmlFor="gp-coverage">
-                Planned coverage
-              </label>
-              <select
-                id="gp-coverage"
-                className="input-quiet"
-                value={form.coverage}
-                onChange={(e) => setForm({ ...form, coverage: e.target.value })}
-              >
-                <option value="CORE">Core</option>
-                <option value="SUPPORTING">Supporting</option>
-                <option value="OPTIONAL">Optional</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-[13px] text-steel" htmlFor="gp-start">
-                  Target start
-                </label>
-                <input
-                  id="gp-start"
-                  type="date"
-                  className="input-quiet"
-                  value={form.plannedStart}
-                  onChange={(e) => setForm({ ...form, plannedStart: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-[13px] text-steel" htmlFor="gp-end">
-                  Target end
-                </label>
-                <input
-                  id="gp-end"
-                  type="date"
-                  className="input-quiet"
-                  value={form.plannedEnd}
-                  onChange={(e) => setForm({ ...form, plannedEnd: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="mt-5 flex gap-2">
-            <Button onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
-            </Button>
-            <Button variant="ghost" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </div>
-        </Modal>
-      )}
-    </section>
+      <div className="mt-4 border-t border-mist pt-3">
+        <p className="text-[10px] uppercase tracking-wide text-slate">Subjects</p>
+        <ul className="mt-1 divide-y divide-mist">
+          {month.subjects.map((subject) => {
+            const focus = subject.focus ? parseTargetFocus(subject.focus) : null;
+            return (
+              <li key={subject.id} className="py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 text-[13px] text-graphite">{subject.name}</p>
+                  <span className="shrink-0 rounded-tags border border-mist-strong bg-fog px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate">
+                    {PRIORITY_LABEL[subject.priority]}
+                  </span>
+                </div>
+                {focus && (
+                  <div className="mt-1.5">
+                    {focus.target && (
+                      <p className="text-[10px] uppercase tracking-wide text-slate">
+                        Target {focus.target}
+                      </p>
+                    )}
+                    <PointList points={focus.points} />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </SectionCard>
   );
 }
 
@@ -292,7 +176,18 @@ function WeekCard({ week, defaultOpen }: { week: GoalWeek; defaultOpen: boolean 
       </div>
       {open && (
         <div className="border-t border-mist px-5 py-4">
-          {week.goal && <p className="text-[15px] text-steel">{week.goal}</p>}
+          {week.goal && (
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+              {parseGoalGroups(week.goal).map((group, index) => (
+                <div key={`${group.label ?? "group"}-${index}`} className="min-w-0">
+                  {group.label && (
+                    <p className="text-[10px] uppercase tracking-wide text-slate">{group.label}</p>
+                  )}
+                  <PointList points={group.points} size="md" columns={1} />
+                </div>
+              ))}
+            </div>
+          )}
           <ul className="mt-3 divide-y divide-mist">
             {week.topics.map((t) => (
               <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -383,7 +278,7 @@ export function GoalPlanner() {
     );
   }
 
-  const { plan, summary, subjects, months, weeks } = data;
+  const { plan, summary, months, weeks } = data;
   const currentWeek =
     weeks.find((w) => new Date(w.startDate) <= new Date() && new Date(w.endDate) >= new Date()) ??
     weeks.find((w) => w.completed < w.total) ??
@@ -442,43 +337,9 @@ export function GoalPlanner() {
         </p>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {months.map((m) => (
-          <SectionCard key={m.id} title={m.title}>
-            <div className="text-[13px] text-steel">{formatRange(m.startDate, m.endDate)}</div>
-            {m.goal && <p className="mt-2 text-[15px] text-graphite">{m.goal}</p>}
-            <div className="mt-3">
-              <ProgressBar value={m.progress.percent} />
-            </div>
-            <div className="mt-1.5 flex justify-between text-[13px] text-steel">
-              <span>
-                {m.progress.completed}/{m.progress.total} topics · {m.weeksCompleted}/{m.weeksTotal} weeks
-              </span>
-              <span>{m.progress.percent}%</span>
-            </div>
-            <ul className="mt-4 space-y-2">
-              {m.subjects.map((s) => (
-                <li key={s.id} className="text-[13px]">
-                  <span className="text-graphite">{s.name}</span>{" "}
-                  <span className="text-slate">· {PRIORITY_LABEL[s.priority]}</span>
-                  {s.focus && <div className="text-steel">{s.focus}</div>}
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        ))}
-      </div>
-
-      <h2 className="mt-10 font-display text-[19px] font-light tracking-[-0.02em] text-graphite">
-        Subject tracks
-      </h2>
-      <p className="mt-1 text-[13px] text-steel">
-        Expand a subject to see chapters and topics. Weightage is a labelled historical estimate, not official
-        GATE 2027 data.
-      </p>
-      <div className="mt-4 space-y-4">
-        {subjects.map((s) => (
-          <SubjectCard key={s.id} subject={s} onChanged={load} />
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+        {months.map((month) => (
+          <MonthCard key={month.id} month={month} />
         ))}
       </div>
 
