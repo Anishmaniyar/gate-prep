@@ -90,7 +90,7 @@ enum GoalCoverage {
 
 model Profile {
   id                  String          @id @default(cuid())
-  name                String          @default("Aspirant")
+  name                String          @default("Anish")
   examTarget          String          @default("GATE 2027 CS")
   startDate           DateTime
   targetDate          DateTime

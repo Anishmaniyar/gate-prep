@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import {
   PRIORITY_LABEL,
   STATUS_LABEL,
@@ -251,8 +251,7 @@ export function GoalPlanner() {
         <div className="mt-6 rounded-cards border border-mist bg-canvas p-6">
           <p className="text-[15px] text-graphite">Could not load the goal plan.</p>
           <p className="mt-1 text-[13px] text-steel">
-            Check that the API is running at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"} and
-            the database is up.
+            Check that the API is running at {API_URL} and the database is up.
           </p>
           <div className="mt-4">
             <Button onClick={load}>Retry</Button>

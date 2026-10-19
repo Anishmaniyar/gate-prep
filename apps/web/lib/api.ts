@@ -1,4 +1,21 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const FALLBACK_API_URL = "http://localhost:4000/api";
+
+/**
+ * The Express app mounts every router under /api, so request paths here are
+ * relative ("/goal-plan", "/streak", …). Accept either configured form:
+ *   https://api.example.com
+ *   https://api.example.com/api
+ * and always resolve to a base ending in /api — never doubling the prefix.
+ */
+export function normalizeApiBaseUrl(value: string) {
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (!trimmed) return FALLBACK_API_URL;
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+}
+
+export const API_URL = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_URL ?? FALLBACK_API_URL
+);
 
 async function request<T>(path: string, init?: RequestInit): Promise<T | null> {
   try {

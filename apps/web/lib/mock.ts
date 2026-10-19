@@ -5,7 +5,7 @@ import type { TopicNode } from "@/components/TopicTree";
 import type { Task } from "@/components/TaskList";
 
 export const MOCK_PROFILE = {
-  name: "Aspirant",
+  name: "Anish",
   examTarget: "GATE 2027 CS",
   targetDate: "2027-02-06",
   streak: 3,

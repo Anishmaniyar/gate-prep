@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { STREAK_EVENT, type StreakState } from "@/lib/dashboard";
+import { Logo } from "@/components/Logo";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -12,6 +13,13 @@ const NAV = [
   { href: "/goal-planner", label: "Goal Planner" },
   { href: "/subjects", label: "Subjects" },
 ] as const;
+
+type DashboardStreak = {
+  streak: number;
+  activeToday?: boolean;
+  date?: string;
+  activity?: { date: string; tasks: number; minutes: number }[];
+};
 
 function useTheme() {
   const [dark, setDark] = useState(false);
@@ -43,7 +51,23 @@ export function Navbar() {
     let cancelled = false;
     const load = async () => {
       const res = await api.get<StreakState>("/streak");
-      if (!cancelled && res) setStreak(res);
+      if (cancelled) return;
+      if (res) {
+        setStreak(res);
+        return;
+      }
+      // Backend not yet redeployed with /streak? Derive from the dashboard
+      // aggregate so the counter still works during rollout.
+      const dashboard = await api.get<DashboardStreak>("/dashboard");
+      if (cancelled || !dashboard) return;
+      const today = dashboard.date
+        ? dashboard.activity?.find((day) => day.date.slice(0, 10) === dashboard.date)
+        : undefined;
+      setStreak({
+        streak: dashboard.streak,
+        activeToday:
+          dashboard.activeToday ?? Boolean(today && (today.tasks > 0 || today.minutes > 0)),
+      });
     };
     const onStreak = (event: Event) => {
       const detail = (event as CustomEvent<StreakState>).detail;
@@ -64,10 +88,8 @@ export function Navbar() {
     <header className="sticky top-0 z-50 h-14 bg-canvas/90 backdrop-blur border-b border-mist">
       <div className="mx-auto flex h-14 w-full max-w-[var(--page-max-width)] items-center gap-3 px-6">
         {/* Brand mark: 20px graphite square + serif wordmark */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0" aria-label="Axiom home">
-          <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-graphite text-canvas font-display text-[13px] font-normal leading-none">
-            A
-          </span>
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Axiom home">
+          <Logo size={20} />
           <span className="font-display text-[19px] font-normal tracking-[-0.02em] text-graphite">
             Axiom
           </span>
@@ -142,13 +164,13 @@ export function Navbar() {
               aria-expanded={menu}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-fog text-[13px] font-medium text-graphite transition-colors duration-200 hover:bg-ash"
             >
-              P
+              A
             </button>
             {menu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenu(false)} />
                 <div className="dropdown-panel absolute right-0 z-20 mt-2 w-44 py-1.5">
-                  <div className="px-4 py-2 text-[13px] text-graphite">Aspirant</div>
+                  <div className="px-4 py-2 text-[13px] text-graphite">Anish</div>
                   <div className="mx-4 border-t border-mist" />
                   <Link href="/" onClick={() => setMenu(false)} className="block px-4 py-2 text-[13px] text-steel hover:bg-fog hover:text-graphite">
                     Dashboard

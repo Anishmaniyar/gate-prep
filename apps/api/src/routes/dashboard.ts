@@ -10,7 +10,7 @@ async function getOrCreateProfile() {
   if (!profile) {
     profile = await prisma.profile.create({
       data: {
-        name: "Aspirant",
+        name: "Anish",
         examTarget: "GATE 2027 CS",
         startDate: new Date(),
         targetDate: new Date("2027-02-06T00:00:00Z"),

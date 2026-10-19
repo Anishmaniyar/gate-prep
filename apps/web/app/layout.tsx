@@ -10,8 +10,9 @@ const FONTS_URL =
   "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400..700&family=Instrument+Serif:ital@0;1&display=swap";
 
 export const metadata: Metadata = {
-  title: "Axiom — GATE 2027 CS Planner",
+  title: "Axiom",
   description: "Axiom: single-user GATE 2027 CS preparation workspace",
+  icons: { icon: "/icon.svg" },
 };
 
 function ThemeScript() {

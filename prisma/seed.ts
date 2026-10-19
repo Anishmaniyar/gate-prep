@@ -1376,7 +1376,7 @@ async function main() {
   if (!profile) {
     profile = await prisma.profile.create({
       data: {
-        name: "Aspirant",
+        name: "Anish",
         examTarget: "GATE 2027 CS",
         startDate: iso("2026-10-19"),
         targetDate: iso("2027-02-06"),
